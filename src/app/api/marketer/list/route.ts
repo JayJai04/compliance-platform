@@ -10,6 +10,11 @@ export async function GET() {
     return NextResponse.json({ error: "Not logged in." }, { status: 401 });
   }
   const supabase = getSupabase();
+  const { data: user } = await supabase
+    .from("marketer_users")
+    .select("affiliate_name")
+    .eq("email", token.email)
+    .single();
   const { data, error } = await supabase
     .from("submissions")
     .select("id, created_at, affiliate_name, product, status, reviewer_note, reviewed_at")
@@ -18,5 +23,5 @@ export async function GET() {
   if (error) {
     return NextResponse.json({ error: "Could not load ads." }, { status: 500 });
   }
-  return NextResponse.json({ items: data, email: token.email });
+  return NextResponse.json({ items: data, email: token.email, name: user?.affiliate_name ?? null });
 }

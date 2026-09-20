@@ -29,6 +29,7 @@ export default function MarketerPage() {
   const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
   const [filter, setFilter] = useState("all");
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -44,6 +45,7 @@ export default function MarketerPage() {
       if (d.items) {
         setItems(d.items);
         setEmail(d.email ?? "");
+        setName(d.name ?? "");
       } else {
         setError(d.error ?? "Load failed.");
       }
@@ -76,7 +78,7 @@ export default function MarketerPage() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 px-6 py-12">
-      <h1 className="text-2xl font-semibold">My ads</h1>
+      <h1 className="text-2xl font-semibold">{name ? `${name}'s Ads` : "My ads"}</h1>
       {email && <p className="text-sm text-zinc-600">{email}</p>}
       <div className="flex gap-2">
         {["all", "pending", "approved", "rejected"].map((f) => (
@@ -123,10 +125,6 @@ export default function MarketerPage() {
 
       <h2 className="mt-4 text-xl font-semibold">Submit a new ad</h2>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Your name</span>
-          <input name="affiliate_name" required className="rounded border px-3 py-2" placeholder="Jane Doe" />
-        </label>
         <label className="flex flex-col gap-1">
           <span className="text-sm font-medium">Product</span>
           <select name="product" required className="rounded border px-3 py-2">

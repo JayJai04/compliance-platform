@@ -16,12 +16,19 @@ export async function POST(request: Request) {
     }
 
     const form = await request.formData();
-    const affiliate_name = String(form.get("affiliate_name") ?? "").trim();
     const product = String(form.get("product") ?? "").trim();
     const file = form.get("ad_image");
 
+    const supabase = getSupabase();
+    const { data: user } = await supabase
+      .from("marketer_users")
+      .select("affiliate_name")
+      .eq("email", token.email)
+      .single();
+    const affiliate_name = user?.affiliate_name?.trim();
+
     if (!affiliate_name || !product) {
-      return NextResponse.json({ error: "Name and product are required." }, { status: 400 });
+      return NextResponse.json({ error: "Account has no name on file." }, { status: 400 });
     }
     if (!["loan", "card", "mortgage"].includes(product)) {
       return NextResponse.json({ error: "Bad product." }, { status: 400 });
@@ -36,7 +43,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "File too big. Max 5MB." }, { status: 400 });
     }
 
-    const supabase = getSupabase();
     const id = randomUUID();
     const path = `${id}.jpg`;
     const bytes = new Uint8Array(await file.arrayBuffer());
