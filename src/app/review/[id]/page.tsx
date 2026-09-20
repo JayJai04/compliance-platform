@@ -16,7 +16,7 @@ type Detail = {
   affiliate_email: string;
   product: string;
   status: string;
-  ai_result: { notes?: string[] } | null;
+  ai_result: { notes?: string[]; overall?: "pass" | "warn" | "fail" | "unknown"; findings?: { code: string; severity: string; message: string }[] } | null;
   reviewer_note: string | null;
 };
 
@@ -125,6 +125,14 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
                 <CardDescription>Reference only — your note below is the marketer-facing decision.</CardDescription>
               </CardHeader>
               <CardContent>
+                {item.ai_result?.overall && (
+                  <p className="text-sm font-medium">Overall: {item.ai_result.overall}</p>
+                )}
+                {(item.ai_result?.findings ?? []).map((f, i) => (
+                  <p key={i} className="mt-1 text-sm text-muted-foreground">
+                    [{f.severity}] {f.message}
+                  </p>
+                ))}
                 {(item.ai_result?.notes ?? ["No notes."]).map((n, i) => (
                   <p key={i} className="mt-1 text-sm text-muted-foreground">{n}</p>
                 ))}

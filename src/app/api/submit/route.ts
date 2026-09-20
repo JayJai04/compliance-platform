@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { MARKETER_COOKIE_NAME, verifyToken } from "@/lib/auth";
 import { getSupabase } from "@/lib/supabase/server";
 import { fakeCheck } from "@/lib/check";
+import { runAiCheck } from "@/lib/ai-check";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
@@ -55,7 +56,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Upload failed." }, { status: 500 });
     }
 
-    const ai_result = fakeCheck();
+    let ai_result;
+    try {
+      ai_result = await runAiCheck(bytes, product);
+    } catch {
+      ai_result = fakeCheck();
+    }
 
     const { error: insertError } = await supabase.from("submissions").insert({
       id,
