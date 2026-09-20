@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { compare } from "bcryptjs";
+import { compare, timingSafeEqual } from "bcryptjs";
 import {
   ADMIN_COOKIE_NAME,
   MARKETER_COOKIE_NAME,
@@ -26,6 +26,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Wrong login." }, { status: 401 });
   }
 
+  const adminUser = process.env.ADMIN_USERNAME ?? "admin";
+  const adminPassword = process.env.ADMIN_INITIAL_PASSWORD ?? "";
+  if (
+    adminPassword &&
+    identifier === adminUser &&
+    password.length === adminPassword.length &&
+    timingSafeEqual(Buffer.from(password), Buffer.from(adminPassword))
+  ) {
+    const token = await signToken({ sub: adminUser, role: "admin" });
+    const res = NextResponse.json({ ok: true, role: "admin" });
+    res.headers.set("Set-Cookie", cookieHeader(ADMIN_COOKIE_NAME, token));
+    res.headers.append("Set-Cookie", clearCookieHeader(MARKETER_COOKIE_NAME));
+    return res;
+  }
+
   let supabase;
   try {
     supabase = getSupabase();
@@ -39,36 +54,22 @@ export async function POST(request: Request) {
     .select("identifier, role, email, password_hash")
     .eq("identifier", identifier)
     .single();
-  if (!user || !(await compare(password, user.password_hash))) {
-    if (identifier.includes("@")) {
-      const { data: byEmail } = await supabase
-        .from("users")
-        .select("identifier, role, email, password_hash")
-        .eq("email", identifier.toLowerCase())
-        .single();
-      if (byEmail && (await compare(password, byEmail.password_hash))) {
-        return await sessionFor(byEmail);
-      }
-    }
-    return NextResponse.json({ error: "Wrong login." }, { status: 401 });
+  let found = user && user.role === "marketer" ? user : null;
+  if (!found && identifier.includes("@")) {
+    const { data: byEmail } = await supabase
+      .from("users")
+      .select("identifier, role, email, password_hash")
+      .eq("email", identifier.toLowerCase())
+      .single();
+    if (byEmail && byEmail.role === "marketer") found = byEmail;
   }
-  return await sessionFor(user);
-}
-
-async function sessionFor(user: { identifier: string; role: string; email: string | null }) {
-  if (user.role === "admin") {
-    const token = await signToken({ sub: user.identifier, role: "admin" });
-    const res = NextResponse.json({ ok: true, role: "admin" });
-    res.headers.set("Set-Cookie", cookieHeader(ADMIN_COOKIE_NAME, token));
-    res.headers.append("Set-Cookie", clearCookieHeader(MARKETER_COOKIE_NAME));
-    return res;
-  }
-  if (user.role === "marketer" && user.email) {
-    const token = await signToken({ sub: user.email, role: "marketer", email: user.email });
-    const res = NextResponse.json({ ok: true, role: "marketer", email: user.email });
+  if (found && found.email && (await compare(password, found.password_hash))) {
+    const token = await signToken({ sub: found.email, role: "marketer", email: found.email });
+    const res = NextResponse.json({ ok: true, role: "marketer", email: found.email });
     res.headers.set("Set-Cookie", cookieHeader(MARKETER_COOKIE_NAME, token));
     res.headers.append("Set-Cookie", clearCookieHeader(ADMIN_COOKIE_NAME));
     return res;
   }
+
   return NextResponse.json({ error: "Wrong login." }, { status: 401 });
 }
