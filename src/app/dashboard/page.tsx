@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type Item = {
   id: string;
@@ -25,6 +26,7 @@ function Thumb({ id }: { id: string }) {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [items, setItems] = useState<Item[]>([]);
   const [filter, setFilter] = useState("all");
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +50,18 @@ export default function DashboardPage() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 px-6 py-12">
-      <h1 className="text-2xl font-semibold">Reviewer dashboard</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Reviewer dashboard</h1>
+        <button
+          onClick={async () => {
+            await fetch("/api/logout", { method: "POST" }).catch(() => {});
+            router.push("/login");
+          }}
+          className="rounded bg-zinc-100 px-3 py-1 text-sm"
+        >
+          Log out
+        </button>
+      </div>
       <p className="text-sm text-zinc-600">
         Pending: {counts.pending} · Approved: {counts.approved} · Rejected: {counts.rejected}
       </p>

@@ -74,11 +74,21 @@ export default function MarketerPage() {
     setSending(false);
   }
 
+  async function onLogout() {
+    await fetch("/api/marketer/logout", { method: "POST" }).catch(() => {});
+    router.push("/marketer/login");
+  }
+
   const shown = filter === "all" ? items : items.filter((i) => i.status === filter);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 px-6 py-12">
-      <h1 className="text-2xl font-semibold">{name ? `${name}'s Ads` : "My ads"}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">{name ? `${name}'s Ads` : "My ads"}</h1>
+        <button onClick={onLogout} className="rounded bg-zinc-100 px-3 py-1 text-sm">
+          Log out
+        </button>
+      </div>
       {email && <p className="text-sm text-zinc-600">{email}</p>}
       <div className="flex gap-2">
         {["all", "pending", "approved", "rejected"].map((f) => (
