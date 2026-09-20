@@ -63,7 +63,7 @@ export default function MarketerSignupPage() {
         </button>
       </form>
       {message && <p className="text-sm">{message}</p>}
-      <Link href="/marketer/login" className="text-sm text-zinc-500 underline">
+      <Link href="/login" className="text-sm text-zinc-500 underline">
         Have an account? Log in
       </Link>
     </main>

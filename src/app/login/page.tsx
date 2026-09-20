@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [message, setMessage] = useState<string | null>(null);
@@ -12,8 +13,9 @@ export default function LoginPage() {
     setMessage(null);
     const form = new FormData(event.currentTarget);
     const res = await fetch("/api/login", { method: "POST", body: form });
+    const data = await res.json().catch(() => ({}));
     if (res.ok) {
-      router.push("/dashboard");
+      router.push(data.role === "admin" ? "/dashboard" : "/marketer");
     } else {
       setMessage("Wrong login.");
     }
@@ -21,12 +23,12 @@ export default function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-sm flex-col gap-6 px-6 py-12">
-      <h1 className="text-2xl font-semibold">Reviewer login</h1>
+      <h1 className="text-2xl font-semibold">Log in</h1>
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Username</span>
+          <span className="text-sm font-medium">Username or email</span>
           <input
-            name="username"
+            name="identifier"
             required
             autoComplete="username"
             className="rounded border px-3 py-2"
@@ -47,6 +49,9 @@ export default function LoginPage() {
         </button>
       </form>
       {message && <p className="text-sm">{message}</p>}
+      <Link href="/marketer/signup" className="text-sm text-zinc-500 underline">
+        No account? Sign up
+      </Link>
     </main>
   );
 }

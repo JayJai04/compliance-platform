@@ -17,7 +17,7 @@ async function roleFor(request: NextRequest, cookieName: string): Promise<string
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  if (path === "/login" || path === "/marketer/login" || path === "/marketer/signup") {
+  if (path === "/login" || path === "/marketer/signup") {
     return NextResponse.next();
   }
   if (path === "/") {
@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
     if (marketerRole === "marketer") {
       return NextResponse.redirect(new URL("/marketer", request.url));
     }
-    return NextResponse.redirect(new URL("/marketer/login", request.url));
+    return NextResponse.redirect(new URL("/login", request.url));
   }
   if (path.startsWith("/dashboard") || path.startsWith("/review")) {
     const role = await roleFor(request, ADMIN_COOKIE_NAME);
@@ -41,7 +41,7 @@ export async function middleware(request: NextRequest) {
   if (path.startsWith("/marketer")) {
     const role = await roleFor(request, MARKETER_COOKIE_NAME);
     if (role !== "marketer") {
-      return NextResponse.redirect(new URL("/marketer/login", request.url));
+      return NextResponse.redirect(new URL("/login", request.url));
     }
     return NextResponse.next();
   }

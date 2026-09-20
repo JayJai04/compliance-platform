@@ -38,7 +38,7 @@ export default function MarketerPage() {
   function load() {
     fetch("/api/marketer/list").then(async (r) => {
       if (r.status === 401) {
-        router.push("/marketer/login");
+        router.push("/login");
         return;
       }
       const d = await r.json();
@@ -76,7 +76,7 @@ export default function MarketerPage() {
 
   async function onLogout() {
     await fetch("/api/marketer/logout", { method: "POST" }).catch(() => {});
-    router.push("/marketer/login");
+    router.push("/login");
   }
 
   const shown = filter === "all" ? items : items.filter((i) => i.status === filter);
