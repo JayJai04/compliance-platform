@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   }
 
   const adminUser = process.env.ADMIN_USERNAME ?? "admin";
-  const adminPassword = process.env.ADMIN_INITIAL_PASSWORD ?? "";
+  const adminPassword = process.env.REVIEWER_PASSWORD ?? "";
   if (
     adminPassword &&
     identifier === adminUser &&

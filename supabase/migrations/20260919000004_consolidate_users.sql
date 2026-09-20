@@ -1,5 +1,5 @@
 -- Round 2 follow-up: single users table for marketers only.
--- Admin stays in env vars (ADMIN_USERNAME / ADMIN_INITIAL_PASSWORD), not in the DB.
+-- Admin stays in env vars (ADMIN_USERNAME / REVIEWER_PASSWORD), not in the DB.
 -- Replaces admin_users + marketer_users from 20260919000003.
 -- Locked down like other tables: RLS enabled, no policies, server-only via service_role.
 
