@@ -28,7 +28,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         const found = (d.items ?? []).find((i: Detail) => i.id === id);
         if (found) {
           setItem(found);
-          setNote(found.reviewer_note ?? (found.ai_result?.notes ?? []).join("\n") ?? "");
+          setNote(found.reviewer_note ?? "");
         }
       });
     fetch(`/api/image?id=${id}`)
