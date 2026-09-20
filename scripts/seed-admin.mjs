@@ -13,8 +13,8 @@ if (!url || !key || !password) {
 const supabase = createClient(url, key, { auth: { persistSession: false } });
 const password_hash = await hash(password, 10);
 const { error } = await supabase
-  .from("admin_users")
-  .upsert({ username: "admin", password_hash }, { onConflict: "username" });
+  .from("users")
+  .upsert({ identifier: "admin", role: "admin", email: null, password_hash }, { onConflict: "identifier" });
 
 if (error) {
   console.error("Seed failed:", error.message);

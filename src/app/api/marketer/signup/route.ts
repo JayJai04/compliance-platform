@@ -28,8 +28,8 @@ export async function POST(request: Request) {
     }
     const password_hash = await hash(password, 10);
     const { error } = await supabase
-      .from("marketer_users")
-      .insert({ email, password_hash, affiliate_name: affiliate_name || null });
+      .from("users")
+      .insert({ identifier: email, role: "marketer", email, password_hash, affiliate_name: affiliate_name || null });
     if (error) {
       console.error("[marketer/signup] insert failed", {
         code: error.code,

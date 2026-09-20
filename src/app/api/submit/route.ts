@@ -21,7 +21,7 @@ export async function POST(request: Request) {
 
     const supabase = getSupabase();
     const { data: user } = await supabase
-      .from("marketer_users")
+      .from("users")
       .select("affiliate_name")
       .eq("email", token.email)
       .single();

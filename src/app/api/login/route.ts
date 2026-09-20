@@ -34,32 +34,41 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Login failed." }, { status: 500 });
   }
 
-  const { data: admin } = await supabase
-    .from("admin_users")
-    .select("username, password_hash")
-    .eq("username", identifier)
+  const { data: user } = await supabase
+    .from("users")
+    .select("identifier, role, email, password_hash")
+    .eq("identifier", identifier)
     .single();
-  if (admin && (await compare(password, admin.password_hash))) {
-    const token = await signToken({ sub: admin.username, role: "admin" });
+  if (!user || !(await compare(password, user.password_hash))) {
+    if (identifier.includes("@")) {
+      const { data: byEmail } = await supabase
+        .from("users")
+        .select("identifier, role, email, password_hash")
+        .eq("email", identifier.toLowerCase())
+        .single();
+      if (byEmail && (await compare(password, byEmail.password_hash))) {
+        return await sessionFor(byEmail);
+      }
+    }
+    return NextResponse.json({ error: "Wrong login." }, { status: 401 });
+  }
+  return await sessionFor(user);
+}
+
+async function sessionFor(user: { identifier: string; role: string; email: string | null }) {
+  if (user.role === "admin") {
+    const token = await signToken({ sub: user.identifier, role: "admin" });
     const res = NextResponse.json({ ok: true, role: "admin" });
     res.headers.set("Set-Cookie", cookieHeader(ADMIN_COOKIE_NAME, token));
     res.headers.append("Set-Cookie", clearCookieHeader(MARKETER_COOKIE_NAME));
     return res;
   }
-
-  const email = identifier.toLowerCase();
-  const { data: marketer } = await supabase
-    .from("marketer_users")
-    .select("email, password_hash")
-    .eq("email", email)
-    .single();
-  if (marketer && (await compare(password, marketer.password_hash))) {
-    const token = await signToken({ sub: marketer.email, role: "marketer", email: marketer.email });
-    const res = NextResponse.json({ ok: true, role: "marketer", email: marketer.email });
+  if (user.role === "marketer" && user.email) {
+    const token = await signToken({ sub: user.email, role: "marketer", email: user.email });
+    const res = NextResponse.json({ ok: true, role: "marketer", email: user.email });
     res.headers.set("Set-Cookie", cookieHeader(MARKETER_COOKIE_NAME, token));
     res.headers.append("Set-Cookie", clearCookieHeader(ADMIN_COOKIE_NAME));
     return res;
   }
-
   return NextResponse.json({ error: "Wrong login." }, { status: 401 });
 }
