@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { COOKIE_NAME, verifySessionValue } from "@/lib/session";
+import { ADMIN_COOKIE_NAME, verifyToken } from "@/lib/auth";
 import { getSupabase } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   const store = await cookies();
-  if (!verifySessionValue(store.get(COOKIE_NAME)?.value)) {
+  const token = await verifyToken(store.get(ADMIN_COOKIE_NAME)?.value);
+  if (!token || token.role !== "admin") {
     return NextResponse.json({ error: "Not logged in." }, { status: 401 });
   }
   const body = await request.json().catch(() => null);

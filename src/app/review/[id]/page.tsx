@@ -28,7 +28,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         const found = (d.items ?? []).find((i: Detail) => i.id === id);
         if (found) {
           setItem(found);
-          setNote(found.reviewer_note ?? "");
+          setNote(found.reviewer_note ?? (found.ai_result?.notes ?? []).join("\n") ?? "");
         }
       });
     fetch(`/api/image?id=${id}`)
@@ -66,7 +66,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         ))}
       </div>
       <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium">Reviewer note</span>
+        <span className="text-sm font-medium">Final decision (edit the AI draft, then approve)</span>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}

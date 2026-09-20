@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { randomUUID } from "crypto";
+import { MARKETER_COOKIE_NAME, verifyToken } from "@/lib/auth";
 import { getSupabase } from "@/lib/supabase/server";
 import { fakeCheck } from "@/lib/check";
 
@@ -7,14 +9,19 @@ const MAX_BYTES = 5 * 1024 * 1024;
 
 export async function POST(request: Request) {
   try {
+    const store = await cookies();
+    const token = await verifyToken(store.get(MARKETER_COOKIE_NAME)?.value);
+    if (!token || token.role !== "marketer" || !token.email) {
+      return NextResponse.json({ error: "Not logged in." }, { status: 401 });
+    }
+
     const form = await request.formData();
     const affiliate_name = String(form.get("affiliate_name") ?? "").trim();
-    const affiliate_email = String(form.get("affiliate_email") ?? "").trim();
     const product = String(form.get("product") ?? "").trim();
     const file = form.get("ad_image");
 
-    if (!affiliate_name || !affiliate_email || !product) {
-      return NextResponse.json({ error: "Name, email, and product are required." }, { status: 400 });
+    if (!affiliate_name || !product) {
+      return NextResponse.json({ error: "Name and product are required." }, { status: 400 });
     }
     if (!["loan", "card", "mortgage"].includes(product)) {
       return NextResponse.json({ error: "Bad product." }, { status: 400 });
@@ -47,7 +54,7 @@ export async function POST(request: Request) {
     const { error: insertError } = await supabase.from("submissions").insert({
       id,
       affiliate_name,
-      affiliate_email,
+      affiliate_email: token.email,
       product,
       ad_image_path: path,
       status: "pending",
