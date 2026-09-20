@@ -30,6 +30,26 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
   const [sending, setSending] = useState<null | "approved" | "rejected">(null);
 
   useEffect(() => {
+    let polls = 0;
+    const timer = setInterval(refreshItem, 3000);
+    function refreshItem() {
+      polls += 1;
+      if (polls > 10) {
+        clearInterval(timer);
+        return;
+      }
+      fetch("/api/list")
+        .then((r) => r.json())
+        .then((d) => {
+          const found = (d.items ?? []).find((i: Detail) => i.id === id);
+          if (!found) return;
+          setItem(found);
+          if (found.ai_result?.overall === "pass" || found.ai_result?.overall === "fail") {
+            clearInterval(timer);
+          }
+        })
+        .catch(() => {});
+    }
     fetch("/api/list")
       .then(async (r) => {
         if (r.status === 401) {
@@ -43,6 +63,9 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         if (found) {
           setItem(found);
           setNote(found.reviewer_note ?? "");
+          if (found.ai_result?.overall === "pass" || found.ai_result?.overall === "fail") {
+            clearInterval(timer);
+          }
         }
       })
       .catch(() => setMessage("Could not load this ad."));
@@ -50,6 +73,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
       .then((r) => r.json())
       .then((d) => setImageUrl(d.url ?? null))
       .catch(() => setImageUrl(null));
+    return () => clearInterval(timer);
   }, [id, router]);
 
   async function decide(decision: "approved" | "rejected") {

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { cookies } from "next/headers";
 import { randomUUID } from "crypto";
 import { MARKETER_COOKIE_NAME, verifyToken } from "@/lib/auth";
@@ -56,12 +56,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Upload failed." }, { status: 500 });
     }
 
-    let ai_result;
-    try {
-      ai_result = await runAiCheck(bytes, product);
-    } catch {
-      ai_result = fakeCheck();
-    }
+    const pending = {
+      ...fakeCheck(),
+      overall: "unknown" as const,
+      notes: ["AI check in progress..."],
+    };
 
     const { error: insertError } = await supabase.from("submissions").insert({
       id,
@@ -70,13 +69,22 @@ export async function POST(request: Request) {
       product,
       ad_image_path: path,
       status: "pending",
-      ai_result,
+      ai_result: pending,
     });
 
     if (insertError) {
       await supabase.storage.from("ads").remove([path]);
       return NextResponse.json({ error: "Save failed." }, { status: 500 });
     }
+
+    after(async () => {
+      try {
+        const result = await runAiCheck(bytes, product);
+        await supabase.from("submissions").update({ ai_result: result }).eq("id", id);
+      } catch (e) {
+        console.error("Background AI check failed:", e);
+      }
+    });
 
     return NextResponse.json({ ok: true, id });
   } catch {
