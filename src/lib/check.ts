@@ -9,6 +9,8 @@ export type AiResult = {
   notes: string[];
   overall?: "pass" | "warn" | "fail" | "unknown";
   findings?: AiFinding[];
+  issues?: string[];
+  recommended_changes?: string;
   ocr_text?: string;
   model?: string;
   checked_at?: string;

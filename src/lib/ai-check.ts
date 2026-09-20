@@ -30,11 +30,14 @@ export async function runAiCheck(
           {
             role: "system",
             content:
-              `You are a financial-ad compliance checker. Inspect the ad image for product "${product}". ` +
-              `Rules: (a) APR must be present and conspicuous if rates or terms are mentioned. ` +
-              `(b) License and lender identity must be disclosed. ` +
-              `(c) Flag banned claims: guaranteed approval, no credit check, instant cash guaranteed, misleading 0% forever. ` +
-              `Return JSON only: { "overall": "pass"|"warn"|"fail", "findings": [{ "code": string, "severity": "info"|"warn"|"fail", "message": string }], "ocr_text": string }.`,
+              `You are a marketing compliance reviewer for ClearPath Financial. Your job is to check affiliate ads for consumer lending products (personal loans, credit cards, mortgage prequalification). The ad is for product "${product}". ` +
+              `Review the provided ad image against these rules: ` +
+              `1. No False Guarantees: The ad must not promise approval (e.g., banned phrases: "guaranteed approval", "100% approved", "no risk", "instant cash with no checks"). ` +
+              `2. Accurate Pricing & Terms: If any interest rate, fee, or monthly payment is mentioned, the text must state that terms vary or include "terms apply" and the APR range. ` +
+              `3. Required Disclosures: The ad must mention the company name "ClearPath Financial" and clearly state that products depend on credit review or approval. ` +
+              `4. Clear Language: The terms must not be misleading or hidden. ` +
+              `Return JSON only: { "overall": "pass"|"fail", "issues": string[], "recommended_changes": string, "ocr_text": string }. ` +
+              `Set overall to "fail" if any violation exists, else "pass". List every violation in issues, or ["None"]. Give specific edits in recommended_changes, or "None". Transcribe visible ad text into ocr_text.`,
           },
           {
             role: "user",
@@ -58,15 +61,31 @@ export async function runAiCheck(
     const data = await res.json();
     const raw = data?.choices?.[0]?.message?.content;
     const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-    if (!parsed || !["pass", "warn", "fail"].includes(parsed.overall)) {
+    if (!parsed || !["pass", "fail"].includes(parsed.overall)) {
       return fallback(model);
     }
 
+    const issues = Array.isArray(parsed.issues) ? parsed.issues.map(String) : [];
+    const recommended =
+      typeof parsed.recommended_changes === "string"
+        ? parsed.recommended_changes
+        : "None";
+
     return {
       checks: [],
-      notes: [],
+      notes: [
+        `Status: ${parsed.overall === "pass" ? "PASS" : "FAIL"}`,
+        `Issues Found: ${issues.length ? issues.join(" | ") : "None"}`,
+        `Recommended Changes: ${recommended}`,
+      ],
       overall: parsed.overall,
-      findings: Array.isArray(parsed.findings) ? parsed.findings : [],
+      findings: issues.map((message: string) => ({
+        code: "rule_violation",
+        severity: "fail" as const,
+        message,
+      })),
+      issues,
+      recommended_changes: recommended,
       ocr_text: typeof parsed.ocr_text === "string" ? parsed.ocr_text : "",
       model,
       checked_at: new Date().toISOString(),
