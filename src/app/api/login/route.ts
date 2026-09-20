@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { compare, timingSafeEqual } from "bcryptjs";
+import { timingSafeEqual } from "crypto";
+import { compare } from "bcryptjs";
 import {
   ADMIN_COOKIE_NAME,
   MARKETER_COOKIE_NAME,
